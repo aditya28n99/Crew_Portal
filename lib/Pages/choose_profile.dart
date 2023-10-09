@@ -129,7 +129,7 @@ class _ChooseProfileState extends State<ChooseProfile> {
             ],
           ),
           SizedBox(
-            height: 160,
+            height: 60,
           ),
           Container(
             width: 280,
