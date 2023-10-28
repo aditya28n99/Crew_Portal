@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui'; // Addded this import for ImageFilter
 import 'package:google_fonts/google_fonts.dart';
+import 'otp_validation.dart';
 
 class EmployerProfile extends StatefulWidget {
   const EmployerProfile({Key? key}) : super(key: key);
@@ -7,7 +9,6 @@ class EmployerProfile extends StatefulWidget {
   @override
   State<EmployerProfile> createState() => _EmployerProfileState();
 }
-
 class _EmployerProfileState extends State<EmployerProfile> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -19,6 +20,86 @@ class _EmployerProfileState extends State<EmployerProfile> {
   String webLink = '';
   String description = '';
   String gstnNumber = '';
+
+  final List<String> temporaryCountryList = [
+    'India',
+    'Japan',
+    'USA',
+    // Add more countries as needed
+  ];
+
+  // Function to navigate to the selected page
+  void navigateToPage() {
+      // Navigate to the JobSeekerPage
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => OtpValidation(),
+      ));
+  }
+  void _submitForm() {
+    if (_formKey.currentState?.validate() ?? false) {
+      _formKey.currentState?.save();
+      // Now you can use the collected data as needed
+      // companyName, email, country, state, city, webLink, description, gstnNumber all data
+      // Clear the form fields
+      _formKey.currentState?.reset();
+
+      // Show confirmation dialog
+      _showTermsAndConditionsDialog();
+    }
+  }
+
+  void _showTermsAndConditionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Stack(
+            children: [
+              // Blurred background
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                ),
+              ),
+              // Terms and Conditions content
+              AlertDialog(
+                title: Text("Terms and Conditions"),
+                content: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "I agree to the Terms of Service and Conditions of Use including consent to electronic communications and I affirm that the information provided is my own.",
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close the dialog
+                    },
+                    child: Text('Disagree'),
+                  ),
+                  ElevatedButton(
+                    onPressed:
+                    //function for navigations
+                    navigateToPage,
+                    style: ElevatedButton.styleFrom(
+                      primary: Color(0xFF130160),
+                    ),
+                    child: Text('Agree and Continue'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   InputDecoration buildInputDecoration(String hintText) {
     return InputDecoration(
@@ -147,19 +228,86 @@ class _EmployerProfileState extends State<EmployerProfile> {
                         return null;
                       },
                     ),
-                    buildTextFormField(
-                      label: 'Country',
-                      hintText: 'Enter your country',
-                      onSave: (value) {
-                        country = value ?? '';
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Country is required';
-                        }
-                        return null;
-                      },
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 5.0, top: 10.0),
+                          child: Text(
+                            'Country',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF130160),
+                              height: 1.33,
+                              letterSpacing: 0.0,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 10.0),
+                        Autocomplete<String>(
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            // Your logic to filter the country list based on user input
+                            return temporaryCountryList.where((String option) {
+                              return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                            });
+                          },
+                          onSelected: (String selectedCountry) {
+                            // Handle the selected country
+                            setState(() {
+                              country = selectedCountry;
+                            });
+                          },
+                          fieldViewBuilder: (BuildContext context, TextEditingController controller, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              onFieldSubmitted: (value) {
+                                onFieldSubmitted();
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Enter your country',
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: EdgeInsets.all(10.0),
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide.none,
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                              ),
+                              style: TextStyle(fontSize: 16.0, color: Color(0xFF130160)),
+                              // You can also add your validator here if needed
+                            );
+                          },
+                          optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4.0,
+                                child: Container(
+                                  height: 200.0,
+                                  width: 200.0,
+                                  child: ListView(
+                                    padding: EdgeInsets.all(8.0),
+                                    children: options.map((String option) => GestureDetector(
+                                      onTap: () {
+                                        onSelected(option);
+                                      },
+                                      child: ListTile(
+                                        title: Text(option),
+                                      ),
+                                    )).toList(),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
+
+
                     Row(
                       children: [
                         Expanded(
@@ -218,18 +366,11 @@ class _EmployerProfileState extends State<EmployerProfile> {
                     ),
                     SizedBox(height: 16.0),
                     ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          _formKey.currentState?.save();
-                          // Now here you can use the collected data as needed
-                          // companyName, email, country, state, city, webLink, description, gstnNumber all data
-                        }
-                      }, // Navigate to the selected page
+                      onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF130160),
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                          BorderRadius.circular(10.0), // Adjust the border radius
+                          borderRadius: BorderRadius.circular(10.0),
                         ),
                       ),
                       child: Text('Submit'),
